@@ -62,6 +62,6 @@ class FigmaTool():
     
         # Recursively get children if they exist
         if "children" in document:
-            simplified["children"] = [self.simplify_node(child) for child in item["children"]]
+            simplified["children"] = [self.simplify_node(child) for child in document["children"]]
             
         return simplified
