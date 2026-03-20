@@ -13,3 +13,10 @@ OpenAI is the Translator. OpenAI provides the moel that converts your text into 
 Pinecone is a specialized database that can store millions of these vectors & calculate which ones are "closet" to each other in milliseconds.
 
 "I chose Pinecone because it provides a serverless, production-grade vector store that allows the agent to perform Semantic Retrieval. Unlike traditional SQL databases that rely on keyword matching, Pinecone allows the agent to understand the contextual meaning of code snippets using OpenAI Embeddings, which significantly reduces hallucinations."
+
+# Step 4: The Orchestrator (LangGraph State Machine)
+## This AI SE needs to work in a loop: Plan -> Code -> Test -> Fix
+--> Agent State : What the agent "remembers" during a single coding session
+--> Nodes : These are the 'thinking steps'
+--> Edges : The logic that tells tge agent, "If the code has a bug, go back to the coder node; if not, finish the task.
+
