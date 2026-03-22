@@ -1,5 +1,9 @@
 from langgraph.graph import StateGraph, END
 from .state import AgentState
+from ..tools.file_system import FileSystemTool
+
+# Initialize the file system tool
+file_tool = FileSystemTool()
 
 # Node 1: The Designer
 def designer_node(state: AgentState):
@@ -10,8 +14,19 @@ def designer_node(state: AgentState):
 # Node 2: The Coder
 def coder_node(state: AgentState):
     print("💻 Node: Coder is generating code...")
-    # Here the AI will write the React/FastAPI code based on the Designer's plan and Figma data
-    return {"messages": ["Coder: Generated the initial components."]}
+
+    # In real run, the LLM would provide this content.
+    # For now, we simulate writing a React component.
+    code_content = "import React from 'react';\n\nexport const App = () => <div> LMS Dashboard </div>;"
+
+    # The Intern 'Acts'
+    file_tool.write_file("src/App.tsx", code_content)
+
+    return {
+        "messages": ["Coder: I have successfully created the App.tsx file in the workspace."],
+        "generated_code": {"src/App.tsx": code_content}
+        }
+        
 
 # Build the Graph
 workflow = StateGraph(AgentState)
