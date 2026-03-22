@@ -8,6 +8,7 @@ dependencies = [
     "langchain-anthropic>=1.4.0",
     "langchain-openai>=1.1.11",
     "langgraph>=1.1.2",
+    "mlflow>=3.10.1",
     "openai>=2.29.0",
     "pinecone>=8.1.0",
     "python-dotenv>=1.2.2",
