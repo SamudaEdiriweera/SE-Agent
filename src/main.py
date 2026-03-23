@@ -1,17 +1,14 @@
 import os
 import mlflow
-from src.agents.graph import app
+from src.agents.graph import app, shared_tracker
 from src.tools.figma_api import FigmaTool
-from src.utils.tracker import AgentTracker
 
 
-# Initialize our Services
-MLflow_tracker = AgentTracker()
 figma_tool = FigmaTool()
 
 def run_intern(figma_url: str, task: str):
     # 1. Start tracking (DRY: ONE line handles all setup/tags)
-    MLflow_tracker.start_coding_session(task_name="LMS_Task", task_type="Figma_to_React")
+    shared_tracker.start_coding_session(task_name="LMS_Task", task_type="Figma_to_React")
 
     try:
         # 2. Extract file Key and Node ID from URL
@@ -53,7 +50,7 @@ def run_intern(figma_url: str, task: str):
 
         # 6. Log the final generated code to MLflow Artifacts (Crucial Step!)
         if final_state.get("generated_code"):
-            MLflow_tracker.log_final_output(final_state["generated_code"])
+            shared_tracker.log_final_output(final_state["generated_code"])
 
         print("\n✅ Task Complete!")
         print(f"Final Message: {final_state['messages'][-1]}")
@@ -61,13 +58,14 @@ def run_intern(figma_url: str, task: str):
 
     except Exception as e:
         print(f"❌ System Error: {str(e)}")
-        # Log the error  to MLflow so u can debug it later
-        mlflow.log_param("status", "failed")
-        mlflow.log_text(str(e), "error_log.txt")
+        
+        # USE THE SHARED TRACKER INSTEAD OF MANUAL MLFLOW CALLS
+        shared_tracker.log_error(e)
+
 
     finally:
         # 7. Ensure the MLflow run is closed
-        MLflow_tracker.end_session()
+        shared_tracker.end_session()
 
 if __name__ == "__main__":
     # Test with your LMS Figma URL
