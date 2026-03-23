@@ -50,6 +50,16 @@ class AgentTracker:
         for filename, content in generated_code.items():
             mlflow.log_text(content, f"production-ready/{filename}")
 
+    def log_error(self, error: Exception):
+        """ 
+        Standardized way to log system errors to MLFlow
+        """
+        # Mark the run as failed in the parameters
+        mlflow.log_param("status", "failed")
+        mlflow.log_text(str(error), "logs/error_traceback.txt")
+        print(f"⚠️ Error logged to MLflow: {str(error)}")
+
+
     def end_session(self):
         if mlflow.active_run():
             mlflow.end_run()
