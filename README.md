@@ -20,3 +20,8 @@ Pinecone is a specialized database that can store millions of these vectors & ca
 --> Nodes : These are the 'thinking steps'
 --> Edges : The logic that tells tge agent, "If the code has a bug, go back to the coder node; if not, finish the task.
 
+#
+uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
+
+#
+uv run python -m src.main

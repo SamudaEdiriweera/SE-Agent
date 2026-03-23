@@ -15,7 +15,6 @@ def designer_node(state: AgentState):
 # Node 2: The Coder
 def coder_node(state: AgentState):
     # This calls the __call__ method in your CoderNode class, which generates code and writes it to the file system
-
     return coder_instance(state)
         
 
