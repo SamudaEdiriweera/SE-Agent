@@ -2,16 +2,21 @@ import mlflow
 from langchain_openai import ChatOpenAI
 from src.tools.file_system import FileSystemTool
 from src.db.pinecone_client import MemoryBank
+from src.utils.tracker import AgentTracker
 
-# Enable Mlflow autologging for LangChain
-mlflow.langchain.autolog()
 
 class CoderNode:
-    def __init__(self):
-        # we use GPT-4o or claude 3.5 Sonnet fo the best coding results
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0)
-        self.files = FileSystemTool()
+    def __init__(self, MLflow_tracker: AgentTracker):
         self.memory = MemoryBank()
+        # 1. Initialize the tools
+        self.files = FileSystemTool(MLflow_tracker=MLflow_tracker)
+        
+        # 2. Define the list of tools the AI can use
+        self.tools = [self.files.write_file, self.files.list_files]
+
+        # 3. Bind tools to the LLM (This is the Senior SE way)
+        # we use GPT-4o or claude 3.5 Sonnet fo the best coding results
+        self.llm = ChatOpenAI(model="gpt-4o", temperature=0).bind_tools(self.tools)
 
     def __call__(self, state):
         print("💻 Coder Node: Analyzing Figma and generating code...")
@@ -39,9 +44,14 @@ class CoderNode:
         # 3. LLM Generate and Act
         # (In a full implementation, we bind the tools here)
         response = self.llm.invoke(prompt)
+        code_content = response.content
+        file_path = "src/App.tsx"
 
         # For this step, let's assume it writes App.tsx
-        self.files.write_file("src/App.tsx", response.content)
+        self.files.write_file.invoke({
+            "file_path": file_path, 
+            "content": code_content
+           })
 
         return {
             "messages": [f"Coder: Created App.tsx based on Figma design."],
