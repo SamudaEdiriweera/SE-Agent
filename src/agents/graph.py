@@ -1,11 +1,12 @@
 from langgraph.graph import StateGraph, END
 from .state import AgentState
-from ..tools.file_system import FileSystemTool
+from .nodes.coder import CoderNode # Import the CoderNode class, the Real Brain
 
-# Initialize the file system tool
-file_tool = FileSystemTool()
+# Initialize the Real Nodes
+# This allows the coder to keep its own LLM and Tool settings
+coder_instance = CoderNode()
 
-# Node 1: The Designer
+# Node 1: The Designer 
 def designer_node(state: AgentState):
     print("🎨 Designer Node: Analyzing Figma Design Data...")
     # Here the AI will eventually look at figma JSON and create a 'Plan'
@@ -13,19 +14,9 @@ def designer_node(state: AgentState):
 
 # Node 2: The Coder
 def coder_node(state: AgentState):
-    print("💻 Node: Coder is generating code...")
+    # This calls the __call__ method in your CoderNode class, which generates code and writes it to the file system
 
-    # In real run, the LLM would provide this content.
-    # For now, we simulate writing a React component.
-    code_content = "import React from 'react';\n\nexport const App = () => <div> LMS Dashboard </div>;"
-
-    # The Intern 'Acts'
-    file_tool.write_file("src/App.tsx", code_content)
-
-    return {
-        "messages": ["Coder: I have successfully created the App.tsx file in the workspace."],
-        "generated_code": {"src/App.tsx": code_content}
-        }
+    return coder_instance(state)
         
 
 # Build the Graph
