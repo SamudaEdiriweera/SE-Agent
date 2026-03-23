@@ -1,10 +1,14 @@
 from langgraph.graph import StateGraph, END
 from .state import AgentState
 from .nodes.coder import CoderNode # Import the CoderNode class, the Real Brain
+from src.utils.tracker import AgentTracker # Import the service
 
-# Initialize the Real Nodes
-# This allows the coder to keep its own LLM and Tool settings
-coder_instance = CoderNode()
+# 1. Initialize the tracker ONCE here
+# This ensures that both the graph and its nodes use the same MLflow session
+shared_tracker = AgentTracker()
+
+# 2. Pass the tracker into the CoderNode (Fixes your TypeError)
+coder_instance = CoderNode(MLflow_tracker=shared_tracker)
 
 # Node 1: The Designer 
 def designer_node(state: AgentState):
