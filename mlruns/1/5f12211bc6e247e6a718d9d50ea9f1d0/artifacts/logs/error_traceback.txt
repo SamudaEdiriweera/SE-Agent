@@ -1,0 +1,1 @@
+'FigmaTool' object has no attribute 'cache_file'

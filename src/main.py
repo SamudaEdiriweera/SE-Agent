@@ -20,7 +20,6 @@ def run_intern(figma_url: str, task: str):
             print("❌ Error: Invalid Figma URL format.")
             return
 
-
         print(f"🚀 Starting Task: {task}")
         print(f"🔍 Fetching Figma Node: {node_id} from File: {file_key}")
 
@@ -58,7 +57,7 @@ def run_intern(figma_url: str, task: str):
 
     except Exception as e:
         print(f"❌ System Error: {str(e)}")
-        
+
         # USE THE SHARED TRACKER INSTEAD OF MANUAL MLFLOW CALLS
         shared_tracker.log_error(e)
 
@@ -69,7 +68,7 @@ def run_intern(figma_url: str, task: str):
 
 if __name__ == "__main__":
     # Test with your LMS Figma URL
-    URL = "https://www.figma.com/design/DLljJas0XEvRI2ESqlYsb1/LMS-Sample?node-id=0-1&p=f&t=C9Xhle13FrlrDhe4-0"
+    URL = "https://www.figma.com/design/kcTJQNg0LOgHevbAjpvIfk/LMS-sample?node-id=1-2&t=R7PWdykVdqQlaLMT-0"
     TASK = "Build a responsive React component for this LMS card design using Tailwind CSS."
 
     run_intern(URL, TASK)
