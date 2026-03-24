@@ -18,21 +18,37 @@ What this tool does:
 """
 
 import os
+import json
 import requests
 from dotenv import load_dotenv
+from pathlib import Path
 
 load_dotenv()
 
-class FigmaTool():
-    def __init__(self):
+class FigmaTool:
+    def __init__(self, cache_dir="data/figma_cache"):
         self.access_token = os.getenv("FIGMA_ACCESS_TOKEN") # Load the Figma Personal Access Token from environment variables
         self.base_url = "https://api.figma.com/v1"
+        self.cache_dir = Path(cache_dir)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def get_file_nodes(self, file_key: str, node_ids: list):
         """ 
         Fetches specific components/frames from a Figma file.
         """
 
+        # Create a unique filename for this specific request
+        node_id_str = "_".join(node_ids).replace(":", "-")
+        cache_file = self.cache_dir / f"{file_key}_{node_id_str}.json"
+
+        # 1. Check if we have this in cache
+        if cache_file.exists():
+            print(f"📦 Loading design from Local Cache: {cache_file}")
+            with open(cache_file, "r") as f:
+                return json.load(f)
+            
+        # 2. If not in cache, call the API (Only if we have requests left)
+        print(f"🌐 Calling Figma API (Careful: Limited requests!)...")   
         headers = {
             "X-Figma-Token": self.access_token # Figma Personal Access Token for authentication
         }
@@ -40,8 +56,14 @@ class FigmaTool():
         url = f"{self.base_url}/files/{file_key}/nodes?ids={ids_csv}" # API endpoint to fetch specific nodes from a Figma file
 
         response = requests.get(url, headers=headers) # Make the GET request to Figma API
+
         if response.status_code == 200:
-            return response.json() # Return the JSON response containing the requested nodes
+            data = response.json()
+            # 3. SAVE TO CACHE IMMEDIATELY
+            with open(cache_file, "w") as f:
+                json.dump(data, f, indent=2)
+            print(f"✅ Design saved to cache for future use.")
+            return data # Return the JSON response containing the requested nodes
         else:
             raise Exception(f"Figma API Error: {response.status_code} - {response.text}") # Raise an exception if the API call fails
         
