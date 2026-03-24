@@ -21,16 +21,13 @@ class FileSystemTool:
         if not os.path.exists(self.base_path):
             os.makedirs(self.base_path)
     
-    # We use the @tool decorator here
-    # IMPORTANT: The docstring below is what the AI reads to understand the tool!
-    @tool
-    def write_file(self, file_path: str, content: str):
+    # # We use the @tool decorator here
+    # # IMPORTANT: The docstring below is what the AI reads to understand the tool!
+    # @tool
+    def write_file_logic(self, file_path: str, content: str):
         """ 
-        Write code to a specific file in the workspace.
-        USe this tool to  create Reat components, package.json, or ML logic files.
-        Arguments:
-        - file_path: The relative path including filename (e.g., 'src/components/Button.tsx)
-        - content: The actual code string to write.
+        Internal logic to write files.
+        
         """
 
         full_path = os.path.join(self.base_path, file_path) # Combine base path with the provided file path
@@ -48,14 +45,41 @@ class FileSystemTool:
         print(f"📂 Created file: {full_path}")
         return f"Successfully wrote to {file_path}"
     
-    @tool
-    def list_files(self):
-        """ Returns a list of all files currently in the workspace.
-            USe this to see what you have already exist.
+    # @tool
+    def list_files_logic(self):
+        """ 
+        Internal logic to list files.
         """
         files_list = [] # Initialize an empty list to store file paths
         for root, _, files  in os.walk(self.base_path): # Walk through the base directory and its subdirectories
             for file in files: # Iterate through each file found
                 files.append(os.path.relpath(os.path.join(root, file), self.base_path)) # Append the relative path of the file to the files_list
         return files_list # Return the list of file paths
+    
+    def to_tools(self):
+        """ 
+        Tool Factory: This creates LangChain tools without the 'self' error.
+        This is the professional way to expose class methods as tools.
+        """
+
+        @tool
+        def write_file(file_path: str, content: str):
+            """
+            Write code to a specific file in the workspace.
+            USe this tool to  create Reat components, package.json, or ML logic files.
+            Arguments:
+            - file_path: The relative path including filename (e.g., 'src/components/Button.tsx)
+            - content: The actual code string to write.
+            """
+            return self.write_file_logic(file_path, content)
+        
+        @tool
+        def list_files():
+            """
+            Returns a list of all files currently in the workspace.
+            USe this to see what you have already exist.
+            """
+            return self.list_files_logic()
+        
+        return [write_file, list_files]
         
