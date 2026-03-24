@@ -9,10 +9,10 @@ class CoderNode:
     def __init__(self, MLflow_tracker: AgentTracker):
         self.memory = MemoryBank()
         # 1. Initialize the tools
-        self.files = FileSystemTool(MLflow_tracker=MLflow_tracker)
+        self.files_manager = FileSystemTool(MLflow_tracker=MLflow_tracker)
         
         # 2. Define the list of tools the AI can use
-        self.tools = [self.files.write_file, self.files.list_files]
+        self.tools = self.files_manager.to_tools()
 
         # 3. Bind tools to the LLM (This is the Senior SE way)
         # we use GPT-4o or claude 3.5 Sonnet fo the best coding results
@@ -48,10 +48,10 @@ class CoderNode:
         file_path = "src/App.tsx"
 
         # For this step, let's assume it writes App.tsx
-        self.files.write_file.invoke({
-            "file_path": file_path, 
-            "content": code_content
-           })
+        self.files_manager.write_file_logic(
+            file_path=file_path, 
+            content=code_content
+           )
 
         return {
             "messages": [f"Coder: Created App.tsx based on Figma design."],
