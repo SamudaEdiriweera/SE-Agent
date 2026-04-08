@@ -5,6 +5,7 @@
 import mlflow
 from datetime import datetime
 import os
+from src.db.pinecone_client import MemoryBank
 
 
 class AgentTracker:
@@ -21,6 +22,8 @@ class AgentTracker:
         # 3. Enable Autologging
         # Captures every thought, tool call, and token automatically, so you can analyze the intern's "thought process" later.
         mlflow.langchain.autolog() # Enable automatic logging for LangChain interactions, which captures all LLM calls, tool usage, and generated content for traceability and analysis.
+
+        self.memory = MemoryBank()
 
     def start_coding_session(self, task_name: str, task_type="UI_Generation"):
         """ 
@@ -41,6 +44,25 @@ class AgentTracker:
         mlflow.set_tag("task_type", task_type) # Tag the run with the type of task being performed (e.g., UI_Generation, API_Development)
 
         return run # Return the active MLflow run context for further logging within the session
+    
+    def save_to_long_term_memory(self, figma_summary: str, generated_code: str, task_name: str):
+        """
+        Stores the 'Design + Code' relationship in Pinecone.
+        This allows the agent to 'remember' how it solved this design 
+        """
+        content_to_remember = f"""
+        DESIGN SUMMARY: {figma_summary}
+        IMPLEMENTED CODE: {generated_code}
+        """
+
+        metadata = {
+            "name": task_name[:100],
+            "type": "design_pattern",
+            "timestamp": datetime.now().isoformat()
+        }
+
+        print(f"🧠 Indexing this design pattern into Pinecone...")
+        self.memory.store_memory(content_to_remember, metadata)
     
     def log_final_output(self, generated_code: dict):
 
