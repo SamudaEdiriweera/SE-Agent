@@ -2,6 +2,7 @@ import os
 from pinecone import Pinecone, ServerlessSpec
 from openai import OpenAI
 from dotenv import load_dotenv
+import hashlib
 
 load_dotenv()
 
@@ -30,11 +31,16 @@ class MemoryBank:
         ).data[0].embedding
     
     def store_memory(self, text: str, metadata: dict):
-        """ Saves a code snippet or doc to Pinecone with its embedding and metadata. """
+        """ Saves a code snippet or doc to Pinecone with a safe, short ID. """
         vector = self.get_embedding(text)
-        # unique ID based on metadata name or hash
-        vector_id = metadata.get("name", str(hash(text))) # Generate a unique ID for the vector, using the 'name' from metadata or a hash of the text as a fallback
+
+        # SENIOR SE FIX: Create a short, unique hash of the content for the ID.
+        # This ensures the ID is ALWAYS short (usually 64 chars), no matter how long the text is.
+        content_hash = hashlib.sha256(text.encode()).hexdigest()
+        vector_id = f"mem_{content_hash[:32]}" # Use first 32 chars of hash
+
         self.index.upsert(vectors=[(vector_id, vector, metadata)]) # Upsert the vector into the Pinecone index with its ID and metadata
+        return vector_id
 
     def query_memory(self, prompt: str, top_k=3):
         """ Retrieves the most relevant memories based on cosine similarity. """
