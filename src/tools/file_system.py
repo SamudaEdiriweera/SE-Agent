@@ -47,14 +47,17 @@ class FileSystemTool:
     
     # @tool
     def list_files_logic(self):
-        """ 
-        Internal logic to list files.
-        """
-        files_list = [] # Initialize an empty list to store file paths
-        for root, _, files  in os.walk(self.base_path): # Walk through the base directory and its subdirectories
-            for file in files: # Iterate through each file found
-                files.append(os.path.relpath(os.path.join(root, file), self.base_path)) # Append the relative path of the file to the files_list
-        return files_list # Return the list of file paths
+            """ 
+            Internal logic to list files.
+            """
+            files_list = [] 
+            for root, _, filenames in os.walk(self.base_path): 
+                for filename in filenames: 
+                    # FIXED: Append to files_list, NOT the loop variable 'filenames'
+                    rel_path = os.path.relpath(os.path.join(root, filename), self.base_path)
+                    files_list.append(rel_path)
+            return files_list
+    
     
     def to_tools(self):
         """ 
