@@ -3,6 +3,8 @@ from pinecone import Pinecone, ServerlessSpec
 from openai import OpenAI
 from dotenv import load_dotenv
 import hashlib
+from langchain_core.tools import tool
+
 
 load_dotenv()
 
@@ -42,9 +44,31 @@ class MemoryBank:
         self.index.upsert(vectors=[(vector_id, vector, metadata)]) # Upsert the vector into the Pinecone index with its ID and metadata
         return vector_id
 
-    def query_memory(self, prompt: str, top_k=3):
+    def query_memory_logic(self, prompt: str, top_k=3):
         """ Retrieves the most relevant memories based on cosine similarity. """
         query_vector = self.get_embedding(prompt)
         results = self.index.query(vector=query_vector, top_k=top_k, include_metadata=True)
         return [match['metadata'] for match in results['matches']] # Return the metadata of the top matching vectors as relevant memories
+    
+    def to_tool(self):
+        """ 
+        Wraps the search capability into a Langchain tool.
+        This allows the LLM to decide when to 'research' coding standards.
+        """
+
+        @tool
+        def search_knowledge_base(query: str):
+            """
+            Searches the company knowledge base for coding standards, Reat bolierplates,
+            Tailwind configurataions, and previoys successful desgin patterns.
+            USe this tool when you encounter a UI component or logic you haven't built before.
+            """
+
+            # We call the logic method
+            results = self.query_memory_logic(query)
+            if not results:
+                return "No specific standards found for this query. Follow general best practices."
+            return results
+        
+        return search_knowledge_base
 
