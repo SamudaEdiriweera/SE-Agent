@@ -19,9 +19,50 @@ coder_instance = CoderNode(MLflow_tracker=shared_tracker)
 reviewer_instance = ReviewerNode() # The reviewer doesn't need the tracker, so we can initialize it directly here. 
 memory_instance = MemoryNode(MLflow_tracker=shared_tracker) # Memory node also needs the tracker to save to Pinecone 
 
-# 3. Define the ToolNode
-# This executes BOTH FileSystem tools and Pinecone Search tools automatically
-tools_node = ToolNode(coder_instance.tools) # Pass the combined list of tools from the coder node
+# 3. Create CUSTOM TOOL NODE (The 'Senior SE' Oberservability Layer)
+def custom_tools_node(state):
+    """ 
+    Executes tool calls made by the Coder and prints progress to terminal.
+    This ensures the 'Agentic Loop' is visible and doesn't look 'stuck'.
+    """
+    print("\n🛠️  Node: Executing Intern's Tool Calls...")
+
+    messages = state["messages"] # Get the full message history to find any tool calls made by the LLM
+    last_message = messages[-1] # This is the message that may contain tool calls from the LLM
+
+    tool_outputs = []
+
+    # The LLM can request multiple tools at once
+    for tool_call in last_message.tool_calls:
+        tool_name = tool_call["name"]
+        tool_args = tool_call["args"]
+
+        print(f"    🔧 Tool Call Detected: [{tool_name}]")
+        print(f"    📝 Arguments: {tool_args}")
+
+        # 1. Find the tool in the coder's tool belt
+        selected_tool = next((t for t in coder_instance.tools if t.name == tool_name), None)
+
+        if selected_tool:
+            try:
+                # 2. Execute the tool logic
+                output = selected_tool.invoke(tool_args)
+                print(f"    ✅ Tool Result: Success")
+            except Exception as e:
+                output = f"Error executing tool: {str(e)}"
+                print(f"   ❌ Tool Result: Error - {str(e)}")
+        else:
+            output = f"Error: Tool '{tool_name}' not found"
+            print(f"    ❌ Tool Result: Not Found")
+
+        # 3. Create a ToolMessage (This sends the result back to the Coder)
+        tool_outputs.append(ToolMessage(
+            tool_call_id = tool_call["id"],
+            content=str(output)
+        ))
+
+    return {"messages": tool_outputs}
+
 
 # --- ROUTING LOGIC (The "Agency of the Graph") ---
 def should_continue(state: AgentState):
@@ -60,7 +101,7 @@ workflow = StateGraph(AgentState)
 # Add all 5 nodes
 workflow.add_node("designer", lambda state: designer_instance(state))
 workflow.add_node("coder", lambda state: coder_instance(state))
-workflow.add_node("tools", tools_node) # This node will execute any tool calls made by the coder
+workflow.add_node("tools", custom_tools_node) # Using our NEW custom node here
 workflow.add_node("reviewer", lambda state: reviewer_instance(state))
 workflow.add_node("memory", lambda state: memory_instance(state))
 
