@@ -36,7 +36,6 @@ class FigmaTool:
         """ 
         Fetches specific components/frames from a Figma file.
         """
-
         # Create a unique filename for this specific request
         node_id_str = "_".join(node_ids).replace(":", "-")
         cache_file = self.cache_dir / f"{file_key}_{node_id_str}.json"
@@ -46,7 +45,7 @@ class FigmaTool:
             print(f"📦 Loading design from Local Cache: {cache_file}")
             with open(cache_file, "r") as f:
                 return json.load(f)
-            
+
         # 2. If not in cache, call the API (Only if we have requests left)
         print(f"🌐 Calling Figma API (Careful: Limited requests!)...")   
         headers = {
@@ -81,7 +80,7 @@ class FigmaTool:
             "style": document.get("style", {}),
             "absoluteBoundingBox": document.get("absoluteBoundingBox", {}),
         }
-    
+
         # Recursively get children if they exist
         if "children" in document:
             simplified["children"] = [self.simplify_node(child) for child in document["children"]]
