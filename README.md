@@ -25,3 +25,6 @@ uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
 
 #
 uv run python -m src.main
+
+# Why i use Custom_tool_node here instead Pre-built Toolnode
+I implemented a custom tool execution node to enhance system obervability and implement custom error-handling logic. This allowed me to monitor tool latency and ensure that if an external API like pinecone failed, the agent could receive a graceful error message and attempt a fallback strategy, rather than crashing the execution thread.

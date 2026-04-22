@@ -1,1 +1,0 @@
-Figma API Error: 429 - {"status":429,"err":"Rate limit exceeded"}

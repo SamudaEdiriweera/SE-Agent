@@ -1,0 +1,7 @@
+2 validation errors for SystemMessage
+content.str
+  Input should be a valid string [type=string_type, input_value={'role': 'system', 'conte...ile to save your code."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_type
+content.list[union[str,dict[any,any]]]
+  Input should be a valid list [type=list_type, input_value={'role': 'system', 'conte...ile to save your code."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/list_type
