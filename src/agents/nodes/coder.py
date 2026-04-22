@@ -4,16 +4,18 @@ from langchain_anthropic import ChatAnthropic
 from src.tools.file_system import FileSystemTool
 from src.db.pinecone_client import MemoryBank
 from src.utils.tracker import AgentTracker
+from langchain_core.messages import SystemMessage
 
 
 class CoderNode:
     def __init__(self, MLflow_tracker: AgentTracker):
-        self.memory = MemoryBank()
+
         # 1. Initialize the tools
         self.files_manager = FileSystemTool(MLflow_tracker=MLflow_tracker)
-        
+        self.memory = MemoryBank()
+
         # 2. Define the list of tools the AI can use
-        self.tools = self.files_manager.to_tools()
+        self.tools = self.files_manager.to_tools() + [self.memory.to_tool()]
 
         # 3. Bind tools to the LLM (This is the Senior SE way)
         # we use GPT-4o or claude 3.5 Sonnet fo the best coding results
@@ -22,66 +24,43 @@ class CoderNode:
 
     def __call__(self, state):
         print("💻 Coder Node: Analyzing Figma and generating code...")
+        # We NO LONGER extract designer_plan or query memory manually.
+        # The LLM sees the whole message history and decides which tools to call.
 
-        # 1. Pull relevant memory from Pinecone
-        memories = self.memory.query_memory(state['current_task'])
-        memory_context = "\n".join([m.get('text', '') for m in memories])
+        # 1. Define the System Insruction
+        system_instruction_string = (
+            "You are a Senior SE. You have access to tools to search memory and write files."
+                       "Review the designer's plan in the history and implement it."
+                       "If you need standards, use search_knowledge_base."
+                       "When ready, use write_file to save your code."
+        )
 
-        # 2. Extract the design plan from the lase message sent by the Designer
-        design_plan = state['messages'][-1]
 
-        # 3. Build the "Senior Propmt"
-        prompt = f"""
+        
 
-        You are a Senior Software Engineer. your task: {state['current_task']}
+        # 2. CONSTRUCT THE MESSAGE LIST (Crucial Step)
+        # We put the SystemMessage at the start, then add the conversation history
+        system_message = SystemMessage(content=system_instruction_string)
 
-        FOLLOW THIS DESIGN PLAN:
-        {design_plan}
+        # Combine with the history from state
+        messages = [system_message] + state['messages']
 
-        Reference figma Design Data:
-        {state['figma_data']}
+        print(f"📡 Sending {len(messages)} messages to Claude...")
 
-        company Standards from Memory:
-        {memory_context}
+        try:
+            # 3. Invoke the LLM with the combined messages
+            response = self.llm.invoke(messages)
+            print(f"✅ LLM Response recevied: {response}")
 
-        Instructions:
-        1. Write the React code.
-        2. Use the 'write_file' tool to save the code to the workspace.
-        """
-
-        # 4. LLM Generate and Act
-        # (In a full implementation, we bind the tools here)
-        response = self.llm.invoke(prompt)
-        code_content = ""
-        file_path = "src/App.tsx"
-
-        # Check if the AI actually used the tool correctly
-        if response.tool_calls:
-            print("🛠️ AI is using the 'write_file' tool...")
-            # Get the first tool call's arguments
-            tool_call = response.tool_calls[0]
-            code_content = tool_call['args'].get('content', "")
-            file_path = tool_call['args'].get('file_path', file_path)
-        else:
-            # Fallback if the AI just wrote text
-            print("📝 AI provided raw text instead of a tool call...")
-            code_content = response.content
-            # Remove markdown code blocks if present (```tsx ...```)
-            if "```" in code_content:
-                code_content = code_content.split("```")[1].split("\n", 1)[1]
-
-        # 5. Save the code
-        # For this step, let's assume it writes App.tsx
-        if code_content.strip():
-            self.files_manager.write_file_logic(
-                file_path=file_path, 
-                content=code_content
-            )
-        else:
-            print("⚠️ Warning: LLM returned empty code.")
-
-        return {
-            "messages": [f"Coder: Created {file_path} based on Figma design."],
-            "generated_code": {file_path: code_content},
-            "is_complete": True
-        }
+            # Return the response to the Graph
+            return {"messages": [response]}
+        except Exception as e:
+            print(f"❌ Error during LLM invocation: {str(e)}")
+            return {"messages": [f"ERROR: {str(e)}"]}
+        # print("#####Test-4.2.2######")
+        # # Pass the entire conversation history (state['messages])
+        # response = self.llm.invoke(state['messages'])
+        # print("#####Test-4.2.3######")
+        # # We just return the response. The Graph will handle the 'Action'
+        # return {"messages": [response]}
+    
