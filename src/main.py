@@ -25,7 +25,6 @@ def run_intern(figma_url: str, task: str):
 
         # 3. Get the actual design data
         raw_figma = figma_tool.get_file_nodes(file_key, [node_id])
-
         # Access the specific node correctly from Figma's nested response
         node_data = raw_figma.get("nodes", {}).get(node_id)
         if not node_data:
